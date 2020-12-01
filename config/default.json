@@ -1,0 +1,3 @@
+{
+    "mongoURI" : "mongodb+srv://arpan:arpan123@candidates.xhujd.mongodb.net/candidates?retryWrites=true&w=majority"
+}

@@ -1,0 +1,378 @@
+const express = require('express');
+const bodyparser = require('body-parser');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const config = require('config');
+const mongoURI = config.get('mongoURI');
+const Grid = require('gridfs-stream');
+const crypto = require('crypto');
+const Candidate = require('./models/contact');
+const connectDB = require('./config/db');
+
+const multer = require('multer');
+const GridFsStorage = require('multer-gridfs-storage');
+const methodOverride = require('method-override');
+const path = require('path');
+const app = express();
+const port = process.env.port || 5000;
+
+connectDB();
+
+app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
+    next();
+  });
+
+const conn = mongoose.createConnection(mongoURI,{
+    useNewUrlParser: true,
+    useUnifiedTopology: true},
+    console.log("MongoDB Connected")
+);
+let gfs;
+conn.once('open',()=>{
+    gfs = Grid(conn.db,mongoose.mongo)
+    gfs.collection('uploads');
+})
+
+conn.once('open',()=>{
+  gfs = Grid(conn.db,mongoose.mongo)
+  gfs.collection('covers');
+})
+//Init Middleware
+app.use(express.json({extended: false}));
+
+//defining route file
+// const route = require('./routes/route');
+// app.use('/api',route)
+
+// to get the contact
+app.get('/candidates',(req,res,next)=>{
+  Candidate.find((err, candidate)=>{
+      res.json(candidate);
+  })
+});
+
+// to get the specific contact
+app.get('/candidates/:_id',(req,res,next)=>{
+  Candidate.find({_id: req.params._id},(err, result)=>{
+      if(err){
+          res.json(err);
+      }
+      else{
+          res.json(result);
+          newemail = result._id
+      }
+  })
+});
+
+// to update a contact
+app.post('/candidates/:_id',(req,res,next)=>{
+  Candidate.findOneAndUpdate({_id : req.params._id},
+    {
+      name : req.body.Name || req.body.name,
+      title: req.body.title || req.body.Title,
+      email: req.body.email || req.body.Email,
+      semail: req.body.semail || req.body.Semail,
+      mobile: req.body.mobile  || req.body.Mobile,
+      website: req.body.website || req.body.Website,
+      street: req.body.street || req.body.Street,
+      city: req.body.city || req.body.City,
+      stateProvince: req.body.stateProvince || req.body.StateProvince,
+      zipCode: req.body.zipCode || req.body.Zipcode,
+      country: req.body.country || req.body.Country,
+      exp: req.body.exp || req.body.Exp,
+      qualification: req.body.highestQualification || req.body.Highestqualification,
+      currentJob: req.body.currentJob || req.body.Currentjob,
+      currentEmployer: req.body.currentEmployer || req.body.Currentemployer,
+      expectedSalary: req.body.expectedSalary || req.body.Expectedsalary,
+      currentSalary: req.body.currentSalary || req.body.Currentsalary,
+      additionalInfo: req.body.additionalInfo || req.body.Additionalinfo,
+      skill: req.body.skill || req.body.Skill,
+      skype: req.body.skype || req.body.Skype,
+      twitter: req.body.twitter || req.body.Twitter,
+      candidateStatus: req.body.candidateStatus || req.body.Candidatestatus,
+      source: req.body.source || req.body.Source,
+      candidateOwner: req.body.candidateOwner || req.body.Candidateowner,
+      emailOption: req.body.emailOption || req.body.Mailoption,
+      // 1st edu.
+      school_1: req.body.school_1 || req.body.School_1,
+      major_1: req.body.major_1 || req.body.Major_1,
+      degree_1: req.body.degree_1 || req.body.Degree_1,
+      monthFrom_11: req.body.fromMonth_1,
+      yearFrom_11: req.body.fromYear_1,
+      monthTo_11: req.body.toMonth_1,
+      yearTo_11: req.body.toYear_1,
+      pursuing_1: req.body.pursuing_1,
+      // 2nd edu.
+      school_2: req.body.school_2 || req.body.School_2,
+      major_2: req.body.major_2 || req.body.Major_2,
+      degree_2: req.body.degree_2 || req.body.Degree_2,
+      fromMonth_2: req.body.fromMonth_2 || req.body.FromMonth_2,
+      fromYear_2: req.body.fromYear_2 || req.body.FromYear_2,
+      toMonth_2: req.body.toMonth_2 || req.body.ToMonth_2,
+      toYear_2: req.body.toYear_2 || req.body.ToYear_2,
+      pursuing_2: req.body.pursuing_2 || req.body.Pursuing_2,
+      // 3rd edu.
+      school_3: req.body.school_3 || req.body.School_3,
+      major_3: req.body.major_3 || req.body.Major_3,
+      degree_3: req.body.degree_3 || req.body.Degree_3,
+      fromMonth_3: req.body.fromMonth_3 || req.body.FromMonth_3,
+      fromYear_3: req.body.fromYear_3 || req.body.FromYear_3,
+      toMonth_3: req.body.toMonth_3 || req.body.ToMonth_3,
+      toYear_3: req.body.toYear_3 || req.body.ToYear_3,
+      pursuing_3: req.body.pursuing_3 || req.body.Pursuing_3,
+      // 4th edu.
+      school_4: req.body.school_4,
+      major_4: req.body.major_4,
+      degree_4: req.body.degree_4,
+      fromMonth_4: req.body.fromMonth_4,
+      fromYear_4: req.body.fromYear_4,
+      toMonth_4: req.body.toMonth_4,
+      toYear_4: req.body.toYear_4,
+      pursuing_4: req.body.pursuing_4,
+      // occupation
+      occupation1: req.body.occupation1,
+      company1: req.body.company1,
+      summary1: req.body.summary1,
+      fromMonth1: req.body.fromMonth1,
+      fromYear1: req.body.fromYear1,
+      toMonth1: req.body.toMonth1,
+      toYear1: req.body.toYear1,
+      currentlyWorking1: req.body.currentlyWorking1,
+
+      occupation2: req.body.occupation2,
+      company2: req.body.company2,
+      summary2: req.body.summary2,
+      fromMonth2: req.body.fromMonth2,
+      fromYear2: req.body.fromYear2,
+      toMonth2: req.body.toMonth2,
+      toYear2: req.body.toYear2,
+      currentlyWorking2: req.body.currentlyWorking2,
+
+      occupation3: req.body.occupation3,
+      company3: req.body.company3,
+      summary3: req.body.summary3,
+      fromMonth3: req.body.fromMonth3,
+      fromYear3: req.body.fromYear3,
+      toMonth3: req.body.toMonth3,
+      toYear3: req.body.toYear3,
+      currentlyWorking3: req.body.currentlyWorking3
+    },
+    function(error, result){
+      if(error){
+        return res.json({
+          status : false,
+          message : "Failed to update.",
+          error : error
+        })
+      }
+      return res.json({
+        status : true,
+        message : "User Data has been updated successfully.",
+        result : result
+      })
+    }
+  )
+})
+
+
+var values={};
+let id=1
+// to add a contact.
+app.post('/candidate',(req,res,next)=>{
+  values.key = req.body.name+req.body.mobile;
+  let newCandidate = new Candidate({
+      // id : id ++,
+      name : req.body.name,
+      title: req.body.title,
+      email: req.body.email,
+      semail: req.body.semail,
+      mobile: req.body.mobile,
+      website: req.body.website,
+      street: req.body.street,
+      city: req.body.city,
+      stateProvince: req.body.stateProvince,
+      zipCode: req.body.zipCode,
+      country: req.body.country,
+      exp: req.body.exp,
+      qualification: req.body.qualification,
+      currentJob: req.body.currentJob,
+      currentEmployer: req.body.currentEmployer,
+      expectedSalary: req.body.expectedSalary,
+      currentSalary: req.body.currentSalary,
+      additionalInfo: req.body.additionalInfo,
+      skill: req.body.skill,
+      skype: req.body.skype,
+      twitter: req.body.twitter,
+      candidateStatus: req.body.candidateStatus,
+      source: req.body.source,
+      candidateOwner: req.body.candidateOwner,
+      emailOption: req.body.emailOption,
+      // 1st edu.
+      school_1: req.body.school_1,
+      major_1: req.body.major_1,
+      degree_1: req.body.degree_1,
+      monthFrom_11: req.body.fromMonth_1,
+      yearFrom_11: req.body.fromYear_1,
+      monthTo_11: req.body.toMonth_1,
+      yearTo_11: req.body.toYear_1,
+      pursuing_1: req.body.pursuing_1,
+      // 2nd edu.
+      school_2: req.body.school_2,
+      major_2: req.body.major_2,
+      degree_2: req.body.degree_2,
+      fromMonth_2: req.body.fromMonth_2,
+      fromYear_2: req.body.fromYear_2,
+      toMonth_2: req.body.toMonth_2,
+      toYear_2: req.body.toYear_2,
+      pursuing_2: req.body.pursuing_2,
+      // 3rd edu.
+      school_3: req.body.school_3,
+      major_3: req.body.major_3,
+      degree_3: req.body.degree_3,
+      fromMonth_3: req.body.fromMonth_3,
+      fromYear_3: req.body.fromYear_3,
+      toMonth_3: req.body.toMonth_3,
+      toYear_3: req.body.toYear_3,
+      pursuing_3: req.body.pursuing_3,
+      // 4th edu.
+      school_4: req.body.school_4,
+      major_4: req.body.major_4,
+      degree_4: req.body.degree_4,
+      fromMonth_4: req.body.fromMonth_4,
+      fromYear_4: req.body.fromYear_4,
+      toMonth_4: req.body.toMonth_4,
+      toYear_4: req.body.toYear_4,
+      pursuing_4: req.body.pursuing_4,
+      // occupation
+      occupation1: req.body.occupation1,
+      company1: req.body.company1,
+      summary1: req.body.summary1,
+      fromMonth1: req.body.fromMonth1,
+      fromYear1: req.body.fromYear1,
+      toMonth1: req.body.toMonth1,
+      toYear1: req.body.toYear1,
+      currentlyWorking1: req.body.currentlyWorking1,
+
+      occupation2: req.body.occupation2,
+      company2: req.body.company2,
+      summary2: req.body.summary2,
+      fromMonth2: req.body.fromMonth2,
+      fromYear2: req.body.fromYear2,
+      toMonth2: req.body.toMonth2,
+      toYear2: req.body.toYear2,
+      currentlyWorking2: req.body.currentlyWorking2,
+
+      occupation3: req.body.occupation3,
+      company3: req.body.company3,
+      summary3: req.body.summary3,
+      fromMonth3: req.body.fromMonth3,
+      fromYear3: req.body.fromYear3,
+      toMonth3: req.body.toMonth3,
+      toYear3: req.body.toYear3,
+      currentlyWorking3: req.body.currentlyWorking3
+  });
+
+  newCandidate.save((err, results)=>{
+      if(err){
+          res.json({msg: "Failed to add contact."})
+      }
+      else{
+          res.json({msg: "Contact added successfully."})
+      }
+  })
+})
+
+
+// to delete a contact.
+app.delete('/candidates/:_id',(req,res,next)=>{
+  console.log(req.params._id)
+  Candidate.findByIdAndRemove(req.params._id,(err, result)=>{
+      if(err){
+          res.json(err);
+      }
+      else{
+          res.json(result);
+      }
+  })
+})
+
+
+//create storage engine
+const storage = new GridFsStorage({
+  url: mongoURI,
+  file: (req, file) => {
+    return new Promise((resolve, reject) => {
+      const filename = values.key; 
+        const fileInfo = {
+          filename: 'file',
+          bucketName: 'uploads'
+        };
+        resolve(fileInfo);
+    });
+  }
+});
+const upload = multer({ storage });
+
+  // @route POST /upload
+  // @desc Uploads file to DB.
+  app.post('/upload',upload.single('resume'),(req,res)=>{
+    console.log(values.key)
+    res.json()
+  })
+
+
+// app.get('/files/:filename',(req,res)=>{
+//   gfs.files.find({filename: req.params.filename}).toArray((err,files)=>{
+//     // Check if files 
+//     if(!files || files.length === 0){
+//       return res.status(404).json({
+//         err: "No files exists."
+//       });
+//     }
+//     // File exists
+//     return res.json(files);
+//   })
+// })
+
+// to display the files
+app.get('/file/:filename',(req,res)=>{
+  gfs.files.findOne({filename: req.params.filename}, (err, files)=>{
+    if(!files || files.length === 0){
+      return res.status(404).json({
+        err: "No files exists."
+      });
+    }
+    if(files.contentType === 'application/pdf' || files.contentType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'){
+      // File exists
+      const readStream = gfs.createReadStream(files.filename);
+      readStream.pipe(res);
+    }
+    else{
+      res.status(404).json({err : 'No file with such name.'})
+}
+  })
+})
+
+//adding middlewares
+app.use(cors())
+app.use(bodyparser.json());
+
+//static files after build
+app.use(express.static(path.join(__dirname, 'public')));
+
+//Running Front End index.html from backend.
+app.get('*',(req, res)=>{
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+})
+
+app.get('/',(req,res)=>{
+    res.send("This is the homepage of the server.");
+})
+
+app.listen(port,()=>{
+    console.log("Server running at:- "+port);
+})
+
