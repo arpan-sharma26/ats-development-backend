@@ -5,14 +5,12 @@ const mongoose = require('mongoose');
 const config = require('config');
 const mongoURI = config.get('mongoURI');
 const Grid = require('gridfs-stream');
-const crypto = require('crypto');
 const Candidate = require('./models/contact');
 const connectDB = require('./config/db');
-const Jobs = require('./models/jobs');
+const uploadedJobs = require('./models/jobs');
 
 const multer = require('multer');
 const GridFsStorage = require('multer-gridfs-storage');
-const methodOverride = require('method-override');
 const path = require('path');
 const app = express();
 const port = process.env.PORT || 5000;
@@ -35,7 +33,7 @@ const conn = mongoose.createConnection(
 		useNewUrlParser: true,
 		useUnifiedTopology: true,
 	},
-	console.log('MongoDB Connected')
+	console.log('MongoDB Connected for files.')
 );
 let gfs;
 conn.once('open', () => {
@@ -327,11 +325,17 @@ app.post('/upload', upload.single('resume'), (req, res) => {
 });
 
 // Get the Jobs from the database.
-app.get('/jobs', (req, res) => {
-	Jobs.find((err, allJobs) => {
-		res.json(allJobs);
+app.get('/jobs', (req, res, next) => {
+	uploadedJobs.find((err, job) => {
+		res.json(job);
 	});
 });
+
+// app.get('/candidates', (req, res, next) => {
+// 	Candidate.find((err, candidate) => {
+// 		res.json(candidate);
+// 	});
+// });
 
 // to display the files
 app.get('/file/:filename', (req, res) => {
@@ -367,9 +371,9 @@ app.get('*', (req, res) => {
 	res.sendFile(path.join(__dirname, 'public/index.html'));
 });
 
-app.get('/', (req, res) => {
-	res.send('This is the homepage of the server.');
-});
+// app.get('/', (req, res) => {
+// 	res.send('This is the homepage of the server.');
+// });
 
 app.listen(port, () => {
 	console.log('Server running at:- ' + port);
